@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 注入极简现代 UI 样式
+# 注入样式
 st.markdown("""
 <style>
     .metric-card {
@@ -202,9 +202,144 @@ with tab2:
             ]
         )
         objection_type = st.selectbox(
-            "⚡ 针对的家长核心顾虑/抗拒点（若处于阶段4或5）",
+            "⚡ 针对的家长核心顾虑/抗拒点",
             [
                 "无抗拒 / 正常推进流程",
                 "嫌980元太贵 / 问能不能便宜点",
-                "孩子初三/高三了，时间太紧没空练字",
-                "字迹已经定型了，短短几
+                "孩子时间紧没空练字",
+                "字迹定型了改不过来",
+                "要跟孩子或家人商量",
+                "孩子自己不重视",
+                "已读不回 / 沉默不语"
+            ]
+        )
+    with col_w2:
+        parent_info = st.text_input("👤 家长与孩子基本情况", value="初三男生家长，孩子英语模拟考90分左右，作文涂改严重")
+        lead_magnet_used = st.text_input("🎁 刚才送出的资料", value="2025中考答题卡1:1速成字帖PDF")
+
+    if st.button("💬 一键生成微信实战话术与心理攻心策略", use_container_width=True, type="primary"):
+        with st.spinner("🤖 正在运用教育私域转化心理学生成切片话术..."):
+            wechat_prompt = f"""
+你是一位拥有近10年私域教育高客单成交经验的顶级金牌导师与沟通心理学专家。
+请根据以下微信沟通场景，为一线老师生成一套【高情商、不卑不亢、专业利他、强信任感】的微信聊天话术。
+
+【沟通背景】：
+- 当前阶段：{wechat_stage}
+- 家长抗拒/顾虑点：{objection_type}
+- 家长/孩子画像：{parent_info}
+- 钩子物料：{lead_magnet_used}
+- 核心转化目标产品：980元/6小时中高考卷面极速提分课（主打：针对中高考答题卡扫描机制，6小时攻克排版、字距与阅卷老师得分盲区，避免丢掉8-15分冤枉分）。
+
+【话术输出要求】：
+1. 【微信单条发送切片（核心重点）】：直接生成 3-5 条适合在微信里一条一条发出去的短文本（每条控制在2-3句话内，带真实教师口吻，语气亲切真诚且专业）。
+2. 【攻心逻辑拆解】：简要说明为什么这几句话能击中家长心理、化解防备。
+3. 【下一步动作引导】：提示老师发完这段话后，下一步该引导家长做什么（如：引导发作文照片、支付定金、锁定名额等）。
+"""
+            try:
+                wechat_resp = client.chat.completions.create(
+                    model=model_choice,
+                    temperature=temp_choice,
+                    messages=[{"role": "user", "content": wechat_prompt}]
+                )
+                st.session_state.wechat_result = wechat_resp.choices[0].message.content
+                st.success("✅ 微信私域转化话术生成成功！")
+            except Exception as e:
+                st.error(f"❌ 生成失败: {str(e)}")
+
+    if st.session_state.wechat_result:
+        st.markdown("---")
+        st.subheader("📋 微信实战聊天话术预览与复制")
+        st.markdown(st.session_state.wechat_result)
+        
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+        col_dw1, col_dw2 = st.columns(2)
+        with col_dw1:
+            st.download_button(
+                label="📥 下载话术为 Markdown (.md)",
+                data=st.session_state.wechat_result,
+                file_name=f"WeChat_SOP_{timestamp}.md",
+                mime="text/markdown",
+                use_container_width=True
+            )
+        with col_dw2:
+            st.download_button(
+                label="📥 下载话术为纯文本 (.txt)",
+                data=st.session_state.wechat_result,
+                file_name=f"WeChat_SOP_{timestamp}.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
+
+# ----------------- TAB 3: 诊断与报告 -----------------
+with tab3:
+    st.markdown("#### 🎯 生成 1对1 权威卷面诊断书与 980元 课程转化方案")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        student_name = st.text_input("👤 学员称呼", value="张同学 (初三)")
+        teacher_name = st.text_input("👨‍🏫 诊断规划师/老师", value="林老师")
+    with col2:
+        subject_info = st.text_input("📚 科目与当前分数", value="中考英语 92分 / 满分120分")
+        target_score = st.text_input("🎯 目标分数", value="105分以上")
+    with col3:
+        issues = st.text_area("🔍 试卷卷面典型问题描述", value="主观题作文涂改严重、字母倾斜度不一致、大小写不分、答题超出答题卡扫描红线边框")
+
+    if st.button("📑 一键生成学员专属诊断报告与高情商转化方案", use_container_width=True, type="primary"):
+        with st.spinner("🤖 正在深度分析卷面失分风险并制定抢分方案..."):
+            diag_prompt = f"""
+你是一位资深中高考卷面教研专家兼高客单私域转化操盘手。
+请根据以下学员的卷面具体情况，生成一份极具专业度、权威感且能自然促进成交的《1对1中高考卷面深度诊断与提分规划书》。
+
+【学员基本档案】：
+- 学员称呼：{student_name}
+- 诊断规划师：{teacher_name}
+- 科目与现状：{subject_info}
+- 冲刺目标：{target_score}
+- 试卷卷面典型问题：{issues}
+
+【核心商业目的】：
+客观指出痛点，测算隐形丢分，给出科学抢分路径，并自然过渡推荐【980元/6小时中高考卷面极速提分实战营】。
+
+【诊断规划书标准输出结构】：
+一、【试卷卷面定性诊断】：从电子阅卷扫描成像与阅卷老师心理角度，指出三大致命失分硬伤。
+二、【卷面隐形丢分精准测算】：测算出主观题、作文、书写规范方面预计被扣掉的“冤枉分”（给出具体分值区间）。
+三、【6小时卷面通关专属抢分方案】：
+    - 第1-2小时：笔画重构与字距标准化（杜绝扫描模糊）
+    - 第3-4小时：答题卡空间布局与防出框控制（确保扫描完整）
+    - 第5-6小时：高频失分题型实战临摹与阅卷给分点仿真训练
+四、【老师高情商私域成交转化话术】：写一段发给家长的微信语音/文字转化话术，语气真诚、不生硬推销、体现极强专业性与紧迫感，自然引入980元课程。
+"""
+            try:
+                diag_response = client.chat.completions.create(
+                    model=model_choice,
+                    temperature=min(temp_choice, 0.4),
+                    messages=[{"role": "user", "content": diag_prompt}]
+                )
+                st.session_state.diag_result = diag_response.choices[0].message.content
+                st.success("✅ 诊断报告生成成功！")
+            except Exception as e:
+                st.error(f"❌ 诊断生成失败: {str(e)}")
+
+    if st.session_state.diag_result:
+        st.markdown("---")
+        st.subheader("📋 学员诊断报告预览与导出")
+        st.markdown(st.session_state.diag_result)
+        
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+        col_d1, col_d2 = st.columns(2)
+        with col_d1:
+            st.download_button(
+                label=f"📥 下载【{student_name}】诊断书 (.md)",
+                data=st.session_state.diag_result,
+                file_name=f"Diagnosis_{student_name}_{timestamp}.md",
+                mime="text/markdown",
+                use_container_width=True
+            )
+        with col_d2:
+            st.download_button(
+                label=f"📥 下载【{student_name}】诊断书 (.txt)",
+                data=st.session_state.diag_result,
+                file_name=f"Diagnosis_{student_name}_{timestamp}.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
