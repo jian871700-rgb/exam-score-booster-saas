@@ -1,13 +1,11 @@
-import streamlit as st
-from openai import OpenAI
 import os
 from datetime import datetime
+import streamlit as st
+from openai import OpenAI
 from dotenv import load_dotenv
 
-# 加载本地环境变量
 load_dotenv()
 
-# --- 页面基本配置 ---
 st.set_page_config(
     page_title="中高考卷面提分 AI 商业工作台",
     page_icon="🎯",
@@ -15,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 自定义样式
+# 样式美化
 st.markdown("""
 <style>
     .stTabs [data-baseweb="tab-list"] { gap: 24px; }
@@ -23,7 +21,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 密码门禁配置 ---
+# 密码门禁
 AUTHORIZED_KEYS = ["exam2025", "vip888", "teacher999"]
 
 if "authenticated" not in st.session_state:
@@ -38,11 +36,9 @@ def check_password():
     else:
         st.session_state.login_error = "❌ 访问密钥无效，请联系管理员获取授权！"
 
-# 未登录时拦截
 if not st.session_state.authenticated:
     st.markdown("<h2 style='text-align: center; margin-top: 50px;'>🔐 中高考卷面提分项目 · 内部商业工作台</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: gray;'>请输入专属授权密钥以进入系统</p>", unsafe_allow_html=True)
-    
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.text_input("授权密钥 (Access Key)", type="password", key="password_input", on_change=check_password)
@@ -53,7 +49,7 @@ if not st.session_state.authenticated:
             st.error(st.session_state.login_error)
     st.stop()
 
-# --- 获取 API Key 并初始化客户端 ---
+# 获取 API Key
 api_key = os.getenv("DEEPSEEK_API_KEY")
 if not api_key:
     try:
@@ -67,24 +63,20 @@ if not api_key:
 
 client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
 
-# 保持结果持久化
 if "xhs_result" not in st.session_state:
     st.session_state.xhs_result = ""
 if "diag_result" not in st.session_state:
     st.session_state.diag_result = ""
 
-# --- 侧边栏 ---
+# 侧边栏
 with st.sidebar:
     st.title("⚙️ 工作台控制中心")
     st.markdown("---")
-    
     selected_model = st.selectbox(
         "选择 AI 大模型：",
         ["deepseek-chat", "deepseek-reasoner"],
-        index=0,
-        help="deepseek-chat 适合文案；deepseek-reasoner 适合复杂诊断分析"
+        index=0
     )
-    
     temperature = st.slider(
         "创意发散度 (Temperature)：",
         min_value=0.0,
@@ -92,31 +84,27 @@ with st.sidebar:
         value=0.70,
         step=0.05
     )
-    
     st.markdown("---")
     st.markdown("📌 **中高考卷面提分项目组**")
     st.caption("💡 核心产品：980元/6小时 提分实操课")
     st.caption("🎁 引流钩子：《2025答题卡1:1速练字帖》")
-    
     st.markdown("---")
     if st.button("🚪 退出登录", use_container_width=True):
         st.session_state.authenticated = False
         st.rerun()
 
-# --- 主界面 ---
+# 主界面
 st.title("🎯 中高考卷面提分 · 营销与转化工作台")
-
 tab1, tab2 = st.tabs(["📝 引流文案爆款工厂", "🔍 试卷深度诊断与转化报告"])
 
 # ==================== Tab 1 ====================
 with tab1:
     st.subheader("📝 小红书/视频号 爆款矩阵文案生成器")
-    
-    col1, col2 = st.columns(2)
-    with col1:
+    c1, c2 = st.columns(2)
+    with c1:
         grade_subject = st.text_input("年级与学科：", value="初三/高三 英语、语文及文综", key="xhs_grade")
         magnet_name = st.text_input("引流资料名称：", value="《2025中高考标准答题卡1:1速练电子字帖》PDF", key="xhs_magnet")
-    with col2:
+    with c2:
         pain_points = st.text_input("痛点关键词：", value="卷面潦草、踩分点被扣、客观题满分主观题扣冤枉分、写字慢", key="xhs_pains")
         target_audience = st.text_input("目标受众群体：", value="初三/高三焦虑家长、提分遇到瓶颈的考生", key="xhs_target")
     
@@ -143,8 +131,8 @@ with tab1:
         st.markdown("### 📄 文案生成结果")
         st.markdown(st.session_state.xhs_result)
         st.markdown("---")
-        c1, c2 = st.columns(2)
-        with c1:
+        dc1, dc2 = st.columns(2)
+        with dc1:
             st.download_button(
                 "📥 下载文案为 Markdown (.md)",
                 st.session_state.xhs_result,
@@ -152,7 +140,7 @@ with tab1:
                 mime="text/markdown",
                 use_container_width=True
             )
-        with c2:
+        with dc2:
             st.download_button(
                 "📥 下载文案为 文本文件 (.txt)",
                 st.session_state.xhs_result,
@@ -164,12 +152,11 @@ with tab1:
 # ==================== Tab 2 ====================
 with tab2:
     st.subheader("🔍 学员专属《卷面深度诊断与提分规划书》")
-    
-    col_a, col_b = st.columns(2)
-    with col_a:
+    ca, cb = st.columns(2)
+    with ca:
         student_name = st.text_input("学员称谓/姓名：", value="张同学", key="diag_stu")
         teacher_name = st.text_input("诊断主考/指导老师：", value="卷面提分教研组", key="diag_teacher")
-    with col_b:
+    with cb:
         subject_score = st.text_input("诊断科目与目前分数：", value="初三中考英语（目前 92分/满分 120）", key="diag_score")
         target_score = st.text_input("期望目标分数：", value="105分以上（卷面挽回 8-12分）", key="diag_target")
     
@@ -195,3 +182,28 @@ with tab2:
                     temperature=0.3
                 )
                 st.session_state.diag_result = res.choices[0].message.content
+                st.success("🎉 学员诊断报告生成完毕！")
+            except Exception as e:
+                st.error(f"生成失败：{str(e)}")
+
+    if st.session_state.diag_result:
+        st.markdown("### 📋 诊断报告与转化话术")
+        st.markdown(st.session_state.diag_result)
+        st.markdown("---")
+        da, db = st.columns(2)
+        with da:
+            st.download_button(
+                f"📥 下载【{student_name}】诊断书 (.md)",
+                st.session_state.diag_result,
+                file_name=f"{student_name}_诊断报告_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
+                mime="text/markdown",
+                use_container_width=True
+            )
+        with db:
+            st.download_button(
+                f"📥 下载【{student_name}】诊断书 (.txt)",
+                st.session_state.diag_result,
+                file_name=f"{student_name}_诊断报告_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
