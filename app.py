@@ -1,433 +1,456 @@
-import streamlit as st
-from openai import OpenAI
-import datetime
+"""
+中高考卷面提分项目 - 商业级全能 SaaS 运营工作台 v5.0 (Pro 旗舰版)
+集成了：
+1. 小红书防限流文案工厂 (含2025新规安全模式)
+2. 微信私域转化与异议攻心专家 (切片化话术)
+3. 学员卷面诊断与高客单报告书 (自动落盘入库)
+4. 微信朋友圈高信任成交文案工厂
+5. 🗄️ 云端学员档案库与历史复盘 (SQLite 数据库支持)
+"""
 
-# 页面基础配置
+import streamlit as st
+import os
+import json
+from openai import OpenAI
+from dotenv import load_dotenv
+import database as db
+
+# 1. 页面基本配置
 st.set_page_config(
-    page_title="中高考卷面提分 · 全链路商业增长中台",
-    page_icon="✍️",
+    page_title="中高考卷面提分 · 商业全能 SaaS 工作台",
+    page_icon="🎯",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# 注入极简现代 UI 样式
+# 初始化数据库表
+db.init_db()
+
+# 注入高质感 UI 样式
 st.markdown("""
 <style>
     .metric-card {
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        padding: 15px;
-        border-left: 4px solid #ff4b4b;
-        margin-bottom: 15px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+    .metric-title {
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+    .metric-value {
+        color: #0f172a;
+        font-size: 20px;
+        font-weight: 700;
     }
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
     }
     .stTabs [data-baseweb="tab"] {
-        height: 48px;
+        padding: 10px 18px;
         font-weight: 600;
-        font-size: 15px;
+        border-radius: 6px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 授权密钥列表
-AUTHORIZED_KEYS = ["dzy1988"]
-
-# 初始化 Session State
+# 2. 状态持久化初始化
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "xhs_result" not in st.session_state:
-    st.session_state.xhs_result = ""
-if "diag_result" not in st.session_state:
-    st.session_state.diag_result = ""
+    st.session_state.xhs_result = None
 if "wechat_result" not in st.session_state:
-    st.session_state.wechat_result = ""
+    st.session_state.wechat_result = None
+if "diagnose_result" not in st.session_state:
+    st.session_state.diagnose_result = None
 if "moments_result" not in st.session_state:
-    st.session_state.moments_result = ""
+    st.session_state.moments_result = None
 
-# 登录验证函数
-def check_password():
-    if not st.session_state.authenticated:
-        st.markdown("<h2 style='text-align: center;'>🔐 中高考卷面提分 · 数字化教研转化系统</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: gray;'>请输入专属授权访问码以进入工作台</p>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            key_input = st.text_input("授权访问码 (Access Key)", type="password", placeholder="请输入密钥")
-            if st.button("🚀 验证并进入工作台", use_container_width=True):
-                if key_input.strip() in AUTHORIZED_KEYS:
-                    st.session_state.authenticated = True
-                    st.rerun()
-                else:
-                    st.error("❌ 授权码无效或已过期，请联系管理员获取！")
-        return False
-    return True
+# 3. 授权验证与安全检查
+AUTHORIZED_KEYS = ["exam2025", "vip888", "teacher999"]
 
-if not check_password():
-    st.stop()
-
-# 获取 API Key
-api_key = st.secrets.get("DEEPSEEK_API_KEY")
+# 优先从 Streamlit Secrets 读取，次选本地环境变量
+api_key = st.secrets.get("DEEPSEEK_API_KEY") if hasattr(st, "secrets") and "DEEPSEEK_API_KEY" in st.secrets else None
 if not api_key:
-    st.error("⚠️ 未检测到 DEEPSEEK_API_KEY，请在 Streamlit Secrets 中配置！")
-    st.stop()
+    load_dotenv()
+    api_key = os.getenv("DEEPSEEK_API_KEY")
 
-client = OpenAI(
-    api_key=api_key,
-    base_url="https://api.deepseek.com"
-)
-
-# 侧边栏配置
+# 4. 侧边栏：安全授权与系统配置
 with st.sidebar:
-    st.title("⚙️ 引擎与控制中心")
+    st.title("⚙️ 系统中枢 & 权限")
+    
+    if not st.session_state.authenticated:
+        access_pwd = st.text_input("🔑 请输入运营授权码：", type="password")
+        if st.button("验证并进入系统", use_container_width=True):
+            if access_pwd in AUTHORIZED_KEYS:
+                st.session_state.authenticated = True
+                st.success("✅ 授权成功，欢迎使用！")
+                st.rerun()
+            else:
+                st.error("❌ 授权码错误，请联系管理员！")
+                st.stop()
+        else:
+            st.info("💡 请先输入授权码以解锁所有商业模块。")
+            st.stop()
+    else:
+        st.success("🟢 当前授权状态：VIP 机构运营版")
+        if st.button("🔒 退出当前授权", use_container_width=True):
+            st.session_state.authenticated = False
+            st.rerun()
+
     st.markdown("---")
-    model_choice = st.selectbox(
-        "🧠 核心推理模型",
+    st.subheader("🤖 AI 模型配置")
+    
+    # 动态支持手动填写 API Key（备用方案）
+    if not api_key:
+        api_key = st.text_input("DeepSeek API Key:", type="password", placeholder="sk-...")
+        if not api_key:
+            st.warning("⚠️ 未检测到 API Key，请在下方配置或设置 Secrets。")
+            st.stop()
+
+    model_option = st.selectbox(
+        "选择推理模型：",
         ["deepseek-chat", "deepseek-reasoner"],
         index=0,
-        help="deepseek-chat 适合文案与发圈；deepseek-reasoner 适合私域攻心拆解与学术诊断。"
+        help="deepseek-chat 速度极快，适合图文与朋友圈；deepseek-reasoner 具备深度逻辑链，适合私域深度攻心与复杂卷面诊断。"
     )
-    temp_choice = st.slider(
-        "🎛️ 逻辑创造度 (Temperature)",
-        min_value=0.0,
-        max_value=1.0,
-        value=0.7,
-        step=0.05,
-        help="文案与私域建议 0.6~0.8，学术诊断建议 0.2~0.4。"
-    )
-    st.markdown("---")
-    st.markdown("### 📌 转化全链路导航")
-    st.caption("1️⃣ **公域引流**：小红书合规干货笔记")
-    st.caption("2️⃣ **私域承接**：微信 1对1 攻心与异议化解")
-    st.caption("3️⃣ **诊断交付**：试卷卷面失分风险报告书")
-    st.caption("4️⃣ **私域发圈**：朋友圈高信任背书与成交")
-    st.caption("5️⃣ **高客单成交**：980元/6小时极速提分营")
-    st.markdown("---")
-    if st.button("🚪 退出登录", use_container_width=True):
-        st.session_state.authenticated = False
-        st.rerun()
+    
+    client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
 
-# 页面主标题
-st.title("✍️ 中高考卷面提分 · 全链路商业增长中台")
-st.caption("四大中枢：公域爆款引流工厂 | 私域微信高情商成交中枢 | 学员深度诊断报告 | 微信朋友圈高信任成交工厂")
+    st.markdown("---")
+    st.subheader("📊 商业闭环定位")
+    st.caption("核心产品：**980元/6小时中高考卷面提分课**")
+    st.caption("引流钩子：**《2025答题卡1:1速练字帖PDF》**")
+    st.caption("数据库支持：**SQLite 本地持久化**")
 
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📝 公域引流文案工厂 (小红书防限流版)", 
-    "💬 微信私域转化与异议攻心专家",
-    "📑 学员卷面诊断与高客单转化报告",
-    "📱 微信朋友圈高信任与成交工厂"
+# 5. 主工作台界面
+st.title("🎯 中高考卷面提分 · 商业全能 SaaS 工作台 (Pro)")
+st.markdown("覆盖 **公域引流 ➡️ 私域转化 ➡️ 卷面诊断 ➡️ 朋友圈发酵 ➡️ 学员档案库** 的全流程高客单变现引擎。")
+
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📕 小红书防限流文案工厂", 
+    "💬 微信私域转化专家", 
+    "📝 卷面诊断与提分报告",
+    "⭕ 朋友圈高信任成交工厂",
+    "🗄️ 云端学员档案库 (Pro)"
 ])
 
-# ----------------- TAB 1: 小红书文案工厂 -----------------
+# ==========================================
+# TAB 1: 小红书防限流文案工厂
+# ==========================================
 with tab1:
-    st.markdown("#### 🎯 批量生成高权重、防限流的小红书爆款笔记")
+    st.header("📕 小红书防限流文案生成器 (2025 平台新规适配)")
+    st.info("💡 **合规安全模式**：文案全程摒弃生硬的「扣1免费领」，采用情境式触发与粉丝群官方合规引导，规避限流与违规判定。")
     
     col1, col2 = st.columns(2)
     with col1:
-        grade_subject = st.selectbox("📌 目标学段/学科", ["初三中考英语", "高三高考语文", "初中全科通用", "高中全科通用"])
-        target_audience = st.selectbox("👥 核心目标受众", ["焦虑初三/高三家长", "字迹潦草/常被扣分的学生", "总分卡在提分瓶颈期的考生"])
+        grade_xhs = st.selectbox("学生学段：", ["初一", "初二", "初三 (中考)", "高一", "高二", "高三 (高考)"], key="xhs_grade")
+        subject_xhs = st.selectbox("学科领域：", ["数学", "语文", "英语", "物理", "化学", "全科通用"], key="xhs_subject")
+        target_score = st.text_input("预期卷面提分目标：", "5-15分 (稳拿卷面印象分)", key="xhs_score")
+        
     with col2:
-        lead_magnet = st.text_input("🎁 嵌入的信任钩子 (资料名)", value="2025中考答题卡1:1速成字帖PDF")
-        core_pain = st.text_input("⚡ 核心戳痛点", value="平时做题都会，一到大考因字迹潦草被扣掉8-15分冤枉分")
+        pain_point_xhs = st.selectbox(
+            "核心卷面痛点：",
+            [
+                "字迹潦草涂改多，阅卷老师直接按最低档给分",
+                "答题不规范，解答题没有分步骤写步骤分全丢",
+                "写字太慢导致最后压轴题没时间做",
+                "答题卡超出边界被扫描仪裁切丢失",
+                "中高考电脑阅卷双评误差导致的隐形扣分"
+            ],
+            key="xhs_pain"
+        )
+        style_xhs = st.selectbox("笔记风格包装：", ["一线阅卷老师内部视角 (权威避坑)", "学霸提分复盘 (逆袭干货)", "焦虑家长拯救指南 (痛点共鸣)"], key="xhs_style")
 
-    if st.button("🔥 立即生成小红书合规爆款文案", use_container_width=True, type="primary"):
-        with st.spinner("🤖 正在结合小红书最新合规算法创作文案..."):
-            prompt = f"""
-你是一位深谙小红书2025最新推荐算法与违规风控机制的顶级教育运营操盘手。
-请针对以下中高考卷面提分需求，创作一篇【绝对合规、防限流、高互动、去AI感】的小红书爆款图文文案。
+    if st.button("🚀 生成合规小红书文案", type="primary", use_container_width=True):
+        prompt = f"""
+        你是一位精通 2025 年小红书最新算法规则的中高考卷面提分资深名师。
+        请为【980元/6小时中高考卷面规范提分课】撰写一篇爆款小红书图文文案。
 
-【核心背景】：
-- 学科与阶段：{grade_subject}
-- 核心受众：{target_audience}
-- 核心痛点：{core_pain}
-- 引流物料：{lead_magnet}
+        【参数信息】：
+        - 学段：{grade_xhs}
+        - 学科：{subject_xhs}
+        - 提分目标：{target_score}
+        - 核心痛点：{pain_point_xhs}
+        - 风格定位：{style_xhs}
 
-【小红书平台防限流硬性规则】：
-1. 严禁出现诱导互动词：绝对禁止出现“评论区扣XX发你”、“免费送”、“无偿领取”、“加微信/私信我”等任何索要互动的表述！
-2. 合规结尾：文末只能使用【自然场景植入】或【启发式提问】，如：“之前带的学生都是用我自己整理的【{lead_magnet}】纠正的，在标准格子里写两周效果就出来了。大家平时英语作文卷面最容易在哪个细节扣分？”
-3. 语言风格：必须第一人称“带了多年中高考班的XX老师”，真诚、专业、多用短句与小红书表情，杜绝AI机械感。
-
-【文案输出格式】：
-1. 3个高点击率爆款封面标题（带情绪标签与数字对比）
-2. 3秒黄金抓人痛点开场
-3. 卷面提分干货正文（分点排版）
-4. 合规互动结尾（启发讨论/自然植入资料名）
-5. 5-8个精准高流量小红书标签
-"""
-            try:
-                response = client.chat.completions.create(
-                    model=model_choice,
-                    temperature=temp_choice,
-                    messages=[{"role": "user", "content": prompt}]
-                )
-                st.session_state.xhs_result = response.choices[0].message.content
-                st.success("✅ 爆款合规文案生成成功！")
-            except Exception as e:
-                st.error(f"❌ 生成失败: {str(e)}")
+        【2025 平台防限流与高转化铁律】：
+        1. 严禁出现「评论区扣1」、「私信我发你」、「免费领取」等强诱导互动词汇（会被系统判定为违规诱导）。
+        2. 引流钩子软植入：在文末以自然口吻提及「针对这套规范，我把中高考答题卡1:1模版和提分细则整理到了自留的复习资料/粉丝群资料库里，需要的同学/家长直接到置顶群聊或按照平时习惯自取即可」。
+        3. 格式要求：
+           - 包含 3 个具有点击率的爆款标题（带 Emoji）；
+           - 封面图设计建议（极度具体：画面左边放什么、右边放什么、打什么大字痛点标签）；
+           - 结构清晰的正文（痛点直击 -> 阅卷内幕揭秘 -> 3个马上可用的改卷面技巧 -> 提分钩子植入 -> 标签）。
+        """
+        
+        with st.spinner("AI 正在根据 2025 小红书最新算法生成防限流文案..."):
+            response = client.chat.completions.create(
+                model=model_option,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7
+            )
+            st.session_state.xhs_result = response.choices[0].message.content
 
     if st.session_state.xhs_result:
-        st.markdown("---")
-        st.subheader("📋 生成结果预览与导出")
+        st.markdown("### 📋 生成结果")
         st.markdown(st.session_state.xhs_result)
-        
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-        col_d1, col_d2 = st.columns(2)
-        with col_d1:
-            st.download_button(
-                label="📥 下载文案为 Markdown (.md)",
-                data=st.session_state.xhs_result,
-                file_name=f"XHS_Copy_{grade_subject}_{timestamp}.md",
-                mime="text/markdown",
-                use_container_width=True
-            )
-        with col_d2:
-            st.download_button(
-                label="📥 下载文案为纯文本 (.txt)",
-                data=st.session_state.xhs_result,
-                file_name=f"XHS_Copy_{grade_subject}_{timestamp}.txt",
-                mime="text/plain",
-                use_container_width=True
-            )
+        st.download_button(
+            label="📥 下载本篇笔记 (Markdown 格式)",
+            data=st.session_state.xhs_result,
+            file_name=f"{grade_xhs}_{subject_xhs}_小红书文案.md",
+            mime="text/markdown"
+        )
 
-# ----------------- TAB 2: 微信私域转化专家 -----------------
+# ==========================================
+# TAB 2: 微信私域转化与异议攻心专家
+# ==========================================
 with tab2:
-    st.markdown("#### 🎯 微信私域 1对1 沟通、高情商推课与异议化解专家")
+    st.header("💬 微信私域转化专家 (切片化高情商话术)")
+    st.caption("针对进私域的家长/学员，生成符合真实微信聊天节奏的「短句切片」，一键复制即发。")
     
-    col_w1, col_w2 = st.columns(2)
-    with col_w1:
-        wechat_stage = st.selectbox(
-            "📍 当前微信沟通阶段",
+    col1, col2 = st.columns(2)
+    with col1:
+        stage = st.selectbox(
+            "当前私域沟通阶段：",
             [
-                "1. 加微信首接打招呼与交付资料（顺便要试卷）",
-                "2. 收到家长试卷图后的【定性反馈与痛点放大】",
-                "3. 正式推荐【980元/6小时卷面抢分实战课】",
-                "4. 核心异议攻心化解（针对家长各种抗拒与犹豫）",
-                "5. 家长已读不回 / 沉默超过24小时的【无压力二次激活】"
-            ]
+                "1. 刚通过好友 (首响破冰与资料交付)",
+                "2. 试卷反馈后 (指出卷面硬伤与提分空间)",
+                "3. 抛出 980元/6小时 提分课程",
+                "4. 异议攻心 (嫌贵/没时间/想自己练)",
+                "5. 未成交沉睡用户激活 (利用模考/倒计时)"
+            ],
+            key="wechat_stage"
         )
-        objection_type = st.selectbox(
-            "⚡ 针对的家长核心顾虑/抗拒点",
-            [
-                "无抗拒 / 正常推进流程",
-                "嫌980元太贵 / 问能不能便宜点",
-                "孩子时间紧没空练字",
-                "字迹定型了改不过来",
-                "要跟孩子或家人商量",
-                "孩子自己不重视",
-                "已读不回 / 沉默不语"
-            ]
-        )
-    with col_w2:
-        parent_info = st.text_input("👤 家长与孩子基本情况", value="初三男生家长，孩子英语模拟考90分左右，作文涂改严重")
-        lead_magnet_used = st.text_input("🎁 刚才送出的资料", value="2025中考答题卡1:1速成字帖PDF")
+        parent_feedback = st.text_input("家长/学生说的那句话（或当前状态）：", "980块钱有点贵，孩子自己在字帖上描一描不行吗？", key="wechat_input")
+        
+    with col2:
+        student_info_wx = st.text_input("学员背景（年级/科目/分数段）：", "初三/数学105分左右/字迹偏乱步骤经常挤在一起", key="wechat_bg")
+        tone_wx = st.selectbox("老师沟通人设：", ["专业严谨且有温度的名师", "推心置腹、懂升学压力的学姐/助教", "直击要害、雷厉风行的阅卷组老师"], key="wechat_tone")
 
-    if st.button("💬 一键生成微信实战话术与心理攻心策略", use_container_width=True, type="primary"):
-        with st.spinner("🤖 正在运用教育私域转化心理学生成切片话术..."):
-            wechat_prompt = f"""
-你是一位拥有近10年私域教育高客单成交经验的顶级金牌导师与沟通心理学专家。
-请根据以下微信沟通场景，为一线老师生成一套【高情商、不卑不亢、专业利他、强信任感】的微信聊天话术。
+    if st.button("⚡ 生成微信对齐切片话术", type="primary", use_container_width=True):
+        prompt = f"""
+        你是一位拥有极高转化率的家庭教育咨询名师兼私域销售转化专家。
+        现在需要针对微信聊天场景，生成一套能够直接复制发给家长的「切片化短句回复话术」。
 
-【沟通背景】：
-- 当前阶段：{wechat_stage}
-- 家长抗拒/顾虑点：{objection_type}
-- 家长/孩子画像：{parent_info}
-- 钩子物料：{lead_magnet_used}
-- 核心转化目标产品：980元/6小时中高考卷面极速提分课（主打：针对中高考答题卡扫描机制，6小时攻克排版、字距与阅卷老师得分盲区，避免丢掉8-15分冤枉分）。
+        【背景参数】：
+        - 沟通阶段：{stage}
+        - 家长输入/异议：{parent_feedback}
+        - 学员背景：{student_info_wx}
+        - 老师人设：{tone_wx}
+        - 最终成交目标：980元/6小时【中高考卷面规范提分定制课】
 
-【话术输出要求】：
-1. 【微信单条发送切片（核心重点）】：直接生成 3-5 条适合在微信里一条一条发出去的短文本（每条控制在2-3句话内，带真实教师口吻，语气亲切真诚且专业）。
-2. 【攻心逻辑拆解】：简要说明为什么这几句话能击中家长心理、化解防备。
-3. 【下一步动作引导】：提示老师发完这段话后，下一步该引导家长做什么（如：引导发作文照片、支付定金、锁定名额等）。
-"""
-            try:
-                wechat_resp = client.chat.completions.create(
-                    model=model_choice,
-                    temperature=temp_choice,
-                    messages=[{"role": "user", "content": wechat_prompt}]
-                )
-                st.session_state.wechat_result = wechat_resp.choices[0].message.content
-                st.success("✅ 微信私域转化话术生成成功！")
-            except Exception as e:
-                st.error(f"❌ 生成失败: {str(e)}")
+        【输出硬性要求】：
+        1. 必须输出为【切片化短消息】格式（模拟微信打字，每条在 20-50 字左右），标明【第1条】、【第2条】、【第3条】、【第4条】。
+        2. 严禁出现长篇大论的教科书式说教！必须符合真实微信聊天心理学（先共情 -> 破除误区/点出致命痛点 -> 给解决方案 -> 给出微行动指令）。
+        3. 针对「嫌980贵」：必须算账（中高考1分压倒一千人，卷面5-15分只需980，平均1分不到100元，比补课几千块划算得多）。
+        4. 针对「想自己练」：指出字帖练的是书法，考试要的是扫描仪识别度与答题区域布局，练错反而浪费冲刺时间。
+        """
+        
+        with st.spinner("AI 正在推演家长心理防御并生成切片式攻心话术..."):
+            response = client.chat.completions.create(
+                model=model_option,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.65
+            )
+            st.session_state.wechat_result = response.choices[0].message.content
 
     if st.session_state.wechat_result:
-        st.markdown("---")
-        st.subheader("📋 微信实战聊天话术预览与复制")
+        st.markdown("### 💬 建议复制以下切片短句直接发送：")
         st.markdown(st.session_state.wechat_result)
-        
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-        col_dw1, col_dw2 = st.columns(2)
-        with col_dw1:
-            st.download_button(
-                label="📥 下载话术为 Markdown (.md)",
-                data=st.session_state.wechat_result,
-                file_name=f"WeChat_SOP_{timestamp}.md",
-                mime="text/markdown",
-                use_container_width=True
-            )
-        with col_dw2:
-            st.download_button(
-                label="📥 下载话术为纯文本 (.txt)",
-                data=st.session_state.wechat_result,
-                file_name=f"WeChat_SOP_{timestamp}.txt",
-                mime="text/plain",
-                use_container_width=True
-            )
 
-# ----------------- TAB 3: 诊断与报告 -----------------
+# ==========================================
+# TAB 3: 学员卷面诊断与高客单报告书 (支持自动落盘入库)
+# ==========================================
 with tab3:
-    st.markdown("#### 🎯 生成 1对1 权威卷面诊断书与 980元 课程转化方案")
+    st.header("📝 学员卷面深度诊断与提分规划书")
+    st.caption("输入学员卷面特征，生成一份极具专业度、让家长愿意为 980 元买单的《卷面提分诊断报告书》，并自动存入学员档案库。")
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     with col1:
-        student_name = st.text_input("👤 学员称呼", value="张同学 (初三)")
-        teacher_name = st.text_input("👨‍🏫 诊断规划师/老师", value="林老师")
-    with col2:
-        subject_info = st.text_input("📚 科目与当前分数", value="中考英语 92分 / 满分120分")
-        target_score = st.text_input("🎯 目标分数", value="105分以上")
-    with col3:
-        issues = st.text_area("🔍 试卷卷面典型问题描述", value="主观题作文涂改严重、字母倾斜度不一致、大小写不分、答题超出答题卡扫描红线边框")
-
-    if st.button("📑 一键生成学员专属诊断报告与高情商转化方案", use_container_width=True, type="primary"):
-        with st.spinner("🤖 正在深度分析卷面失分风险并制定抢分方案..."):
-            diag_prompt = f"""
-你是一位资深中高考卷面教研专家兼高客单私域转化操盘手。
-请根据以下学员的卷面具体情况，生成一份极具专业度、权威感且能自然促进成交的《1对1中高考卷面深度诊断与提分规划书》。
-
-【学员基本档案】：
-- 学员称呼：{student_name}
-- 诊断规划师：{teacher_name}
-- 科目与现状：{subject_info}
-- 冲刺目标：{target_score}
-- 试卷卷面典型问题：{issues}
-
-【核心商业目的】：
-客观指出痛点，测算隐形丢分，给出科学抢分路径，并自然过渡推荐【980元/6小时中高考卷面极速提分实战营】。
-
-【诊断规划书标准输出结构】：
-一、【试卷卷面定性诊断】：从电子阅卷扫描成像与阅卷老师心理角度，指出三大致命失分硬伤。
-二、【卷面隐形丢分精准测算】：测算出主观题、作文、书写规范方面预计被扣掉的“冤枉分”（给出具体分值区间）。
-三、【6小时卷面通关专属抢分方案】：
-    - 第1-2小时：笔画重构与字距标准化（杜绝扫描模糊）
-    - 第3-4小时：答题卡空间布局与防出框控制（确保扫描完整）
-    - 第5-6小时：高频失分题型实战临摹与阅卷给分点仿真训练
-四、【老师高情商私域成交转化话术】：写一段发给家长的微信语音/文字转化话术，语气真诚、不生硬推销、体现极强专业性与紧迫感，自然引入980元课程。
-"""
-            try:
-                diag_response = client.chat.completions.create(
-                    model=model_choice,
-                    temperature=min(temp_choice, 0.4),
-                    messages=[{"role": "user", "content": diag_prompt}]
-                )
-                st.session_state.diag_result = diag_response.choices[0].message.content
-                st.success("✅ 诊断报告生成成功！")
-            except Exception as e:
-                st.error(f"❌ 诊断生成失败: {str(e)}")
-
-    if st.session_state.diag_result:
-        st.markdown("---")
-        st.subheader("📋 学员诊断报告预览与导出")
-        st.markdown(st.session_state.diag_result)
+        s_name = st.text_input("学员姓名/代号：", "张同学", key="diag_name")
+        s_grade = st.selectbox("所在年级：", ["初二", "初三 (中考)", "高一", "高二", "高三 (高考)"], key="diag_grade")
+        s_subject = st.selectbox("主要诊断学科：", ["语文 (作文与简答)", "数学 (大题步骤规范)", "英语 (作文书写与涂卡)", "理综/文综综合卷面"], key="diag_sub")
         
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+    with col2:
+        s_score_gap = st.text_input("当前成绩与目标差距：", "当前102分，目标115分 (卷面预估丢分8-12分)", key="diag_score")
+        s_issues = st.text_area(
+            "卷面硬伤特征描述：", 
+            "字迹倾斜且偏小，涂改处直接打黑团；解答题没有分步骤写“解/答/公式”，大题逻辑混乱，阅卷老师很难一眼抓到得分点；答题卡第21题有超出黑色边框现象。",
+            key="diag_issues"
+        )
+
+    if st.button("📋 生成专业诊断书并自动归档", type="primary", use_container_width=True):
+        prompt = f"""
+        你是一位中高考命题阅卷组特聘卷面规范专家。
+        请为学员【{s_name}】出具一份极具权威感、说服力且排版优美的《中高考卷面提分深度诊断与行动方案》。
+
+        【学员档案】：
+        - 姓名：{s_name}
+        - 学段：{s_grade}
+        - 学科：{s_subject}
+        - 成绩与差距：{s_score_gap}
+        - 卷面实测硬伤：{s_issues}
+
+        【报告结构规范】：
+        # 📑《中高考卷面规范与提分空间深度诊断报告书》
+        ## 一、卷面综合定级与隐形丢分评估（定级：如 C级严重失分 / B级隐患较大 / A级良好需精进，并明确指出卷面预计损失的具体分值）
+        ## 二、阅卷机视角三大致命硬伤剖析（从高分扫描仪成像、阅卷老师 5-8 秒扫视心理学深度解读）
+        ## 三、6小时卷面重塑与提分定制路径（分为：书写结构矫正 2h -> 黄金答题排版规范 2h -> 压轴题抢分话术模版 2h）
+        ## 四、专家建议与行动方案（顺理成章引出 980元/6小时 定制卷面提分课，说明预期提分效果与保分承诺）
+        """
+        
+        with st.spinner("AI 正在构建专业医学级提分诊断报告并归档..."):
+            response = client.chat.completions.create(
+                model=model_option,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.5
+            )
+            report_text = response.choices[0].message.content
+            st.session_state.diagnose_result = report_text
+            
+            # 自动保存到 SQLite 数据库
+            db.save_report(
+                student_name=s_name,
+                grade=s_grade,
+                subject=s_subject,
+                score_gap=s_score_gap,
+                issue_desc=s_issues,
+                report_content=report_text
+            )
+            st.toast(f"💾 学员【{s_name}】的诊断报告已自动永久归档至云端学员库！", icon="✅")
+
+    if st.session_state.diagnose_result:
+        st.markdown("### 📄 诊断报告书预览")
+        st.markdown(st.session_state.diagnose_result)
+        
         col_d1, col_d2 = st.columns(2)
         with col_d1:
             st.download_button(
-                label=f"📥 下载【{student_name}】诊断书 (.md)",
-                data=st.session_state.diag_result,
-                file_name=f"Diagnosis_{student_name}_{timestamp}.md",
+                label=f"📥 导出为学员专属诊断书 ({s_name}.md)",
+                data=st.session_state.diagnose_result,
+                file_name=f"{s_name}_{s_grade}_{s_subject}_卷面诊断提分报告.md",
                 mime="text/markdown",
                 use_container_width=True
             )
         with col_d2:
             st.download_button(
-                label=f"📥 下载【{student_name}】诊断书 (.txt)",
-                data=st.session_state.diag_result,
-                file_name=f"Diagnosis_{student_name}_{timestamp}.txt",
+                label=f"📄 导出为纯文本 ({s_name}.txt)",
+                data=st.session_state.diagnose_result,
+                file_name=f"{s_name}_诊断报告.txt",
                 mime="text/plain",
                 use_container_width=True
             )
 
-# ----------------- TAB 4: 朋友圈高信任文案工厂 -----------------
+# ==========================================
+# TAB 4: 朋友圈高信任成交文案工厂
+# ==========================================
 with tab4:
-    st.markdown("#### 🎯 微信朋友圈高信任背书与 980元 课程转化发圈工厂")
+    st.header("⭕ 朋友圈高信任成交文案工厂")
+    st.caption("打造不惹人烦、专业度拉满、持续唤醒家长的朋友圈内容矩阵。")
     
-    col_m1, col_m2 = st.columns(2)
-    with col_m1:
-        moments_type = st.selectbox(
-            "📌 朋友圈发圈类型/转化目的",
+    col1, col2 = st.columns(2)
+    with col1:
+        moment_type = st.selectbox(
+            "朋友圈内容模型：",
             [
-                "1. 学员提分案例反差型（Before/After 卷面对比 + 提分喜报）",
-                "2. 阅卷内幕与专业认知输出（中高考答题卡扫描踩坑点揭秘）",
-                "3. 教学日常与名额抢占紧迫感（正在一对一批改 + 本周仅剩X个名额）",
-                "4. 家长真实好评与转介绍晒单（截图反馈 + 感谢家长的信任）"
-            ]
+                "1. 学员提分对比模型 (视觉冲击+成绩逆袭)",
+                "2. 阅卷内幕/认知颠覆模型 (打破家长固有认知)",
+                "3. 名额稀缺/交付日常模型 (展现火爆与负责态度)",
+                "4. 家长走心好评/感谢模型 (第三方证言造势)"
+            ],
+            key="moment_type"
         )
-        teacher_vibe = st.selectbox(
-            "🎭 老师发圈人设基调",
-            ["专业严谨且有温度的提分导师", "带过多年毕业班的干货型名师", "亲和力拉满、懂孩子心理的辅导老友"]
-        )
-    with col_m2:
-        case_details = st.text_input(
-            "📝 本条发圈核心素材/亮点",
-            value="初三李同学，英语作文原本只有15分（字迹密密麻麻），经过4小时字距调整，一模作文拿到21分！"
-        )
-        call_to_action = st.text_input(
-            "🎯 引导动作 / 钩子",
-            value="本周末【6小时卷面极速抢分营】还剩最后2个1对1指导名额，私信锁定"
-        )
+        grade_moment = st.selectbox("针对学段：", ["初三 (中考冲刺)", "高三 (高考冲刺)", "初一初二/高一高二 (提前规避)"], key="moment_grade")
+        
+    with col2:
+        subject_moment = st.selectbox("针对学科：", ["数学大题", "语文作文", "英语书写", "全科答题规范"], key="moment_sub")
+        detail_moment = st.text_input("具体素材细节（如提了多少分/哪个学校学员/今天收到了什么反馈）：", "初三学生经过6小时规范训练，模拟考数学大题步骤分全拿，卷面多拿了9分！", key="moment_detail")
 
-    if st.button("📱 一键生成高转化朋友圈文案（含配图建议与自评）", use_container_width=True, type="primary"):
-        with st.spinner("🤖 正在结合私域朋友圈黄金成交心理学生成文案..."):
-            moments_prompt = f"""
-你是一位顶级的教育私域发圈操盘手兼个人IP转化大师。
-请根据以下素材，为中高考卷面提分项目的老师创作一套【极高信任感、不打硬广、生活化、高互动、促成转化】的微信朋友圈文案。
+    if st.button("✨ 一键生成高转化朋友圈", type="primary", use_container_width=True):
+        prompt = f"""
+        你是一位深谙微信私域朋友圈成交逻辑的教育名师 IP 操盘手。
+        请为【980元/6小时中高考卷面提分课】撰写一条极具吸引力、高信任度且不折叠的朋友圈文案。
 
-【发圈背景】：
-- 发圈类型：{moments_type}
-- 老师人设风格：{teacher_vibe}
-- 核心素材亮点：{case_details}
-- 转化目标/引导动作：{call_to_action}（关联980元/6小时中高考卷面提分课程）
+        【模型参数】：
+        - 内容模型：{moment_type}
+        - 针对学段：{grade_moment}
+        - 针对学科：{subject_moment}
+        - 真实细节：{detail_moment}
 
-【发圈输出要求】：
-1. 【朋友圈正文】：
-   - 严禁机械AI味，语言生活化、自然真诚。
-   - 采用舒适的分段排版，控制字数与行数（防止在微信朋友圈被强制折叠成“全文”）。
-   - 巧妙带出专业价值与学生变化，不生硬推销。
-2. 【配图拍摄与排版建议】：具体建议发单图、三图、四宫格还是九宫格？每张图应该放什么（例如：左边放修改前密密麻麻的答题卡，右边放规范后，中间放家长微信好评截图）。
-3. 【第一条自评话术（关键钩子）】：生成一条发布朋友圈后立刻在评论区自己发布的留言（用于抛出领取资料的钩子、说明名额仅剩多少、或补充行动指令，避免污染正文）。
-"""
-            try:
-                moments_resp = client.chat.completions.create(
-                    model=model_choice,
-                    temperature=temp_choice,
-                    messages=[{"role": "user", "content": moments_prompt}]
-                )
-                st.session_state.moments_result = moments_resp.choices[0].message.content
-                st.success("✅ 朋友圈高转化文案生成成功！")
-            except Exception as e:
-                st.error(f"❌ 生成失败: {str(e)}")
+        【朋友圈文案核心规则】：
+        1. 【防折叠排版】：前两行必须是黄金吸睛钩子（不被“全文”折叠隐藏）；段落之间空行，适当使用 Emoji。
+        2. 【配图建议】：给出极度具体的 1-3 张图片搭配方案（如：左图练前涂改卷，右图练后规范卷，中间放成绩单/家长聊天截图）。
+        3. 【第一条评论 (自评套路)】：文末提供 1 条老师在朋友圈自评区置顶的话术（用于引导私聊或制造紧迫感，不污染正文格调）。
+        """
+        
+        with st.spinner("AI 正在根据微信朋友圈传播算法生成高转化文案..."):
+            response = client.chat.completions.create(
+                model=model_option,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7
+            )
+            st.session_state.moments_result = response.choices[0].message.content
 
     if st.session_state.moments_result:
-        st.markdown("---")
-        st.subheader("📋 朋友圈发圈方案预览与复制")
+        st.markdown("### 📱 朋友圈文案与配图方案")
         st.markdown(st.session_state.moments_result)
+
+# ==========================================
+# TAB 5: 云端学员档案库 (Pro)
+# ==========================================
+with tab5:
+    st.header("🗄️ 云端学员档案库与历史复盘 (Pro)")
+    st.caption("所有在【Tab 3】生成的学员诊断报告均在此永久保存，支持按姓名快速检索、回看与管理。")
+    
+    # 顶部搜索与数据概览
+    search_col, stat_col = st.columns([2, 1])
+    with search_col:
+        search_kw = st.text_input("🔍 搜索学员姓名 / 年级 / 学科：", placeholder="输入如：张同学、初三、数学...", key="search_kw")
+    
+    # 获取数据库中的记录
+    records = db.get_all_reports(search_query=search_kw.strip() if search_kw else None)
+    
+    with stat_col:
+        st.metric("📁 已沉淀档案总数", f"{len(records)} 份")
         
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-        col_dm1, col_dm2 = st.columns(2)
-        with col_dm1:
-            st.download_button(
-                label="📥 下载朋友圈文案为 Markdown (.md)",
-                data=st.session_state.moments_result,
-                file_name=f"Moments_Copy_{timestamp}.md",
-                mime="text/markdown",
-                use_container_width=True
-            )
-        with col_dm2:
-            st.download_button(
-                label="📥 下载朋友圈文案为纯文本 (.txt)",
-                data=st.session_state.moments_result,
-                file_name=f"Moments_Copy_{timestamp}.txt",
-                mime="text/plain",
-                use_container_width=True
-            )
+    st.markdown("---")
+    
+    if not records:
+        if search_kw:
+            st.warning(f"🔍 未找到与「{search_kw}」相关的学员记录。")
+        else:
+            st.info("💡 暂无学员档案。请前往【Tab 3 卷面诊断与提分报告】生成第一份学员诊断书，系统将自动在此建立档案！")
+    else:
+        for item in records:
+            with st.expander(f"👤 学员：{item['student_name']} | 🎓 {item['grade']} - {item['subject']} | ⏱️ {item['created_at']}"):
+                col_info1, col_info2 = st.columns(2)
+                with col_info1:
+                    st.write(f"**提分目标：** {item['score_gap']}")
+                with col_info2:
+                    st.write(f"**卷面硬伤特征：** {item['issue_desc']}")
+                
+                st.markdown("#### 📄 完整诊断报告书：")
+                st.markdown(item['report_content'])
+                
+                btn_col1, btn_col2 = st.columns([1, 1])
+                with btn_col1:
+                    st.download_button(
+                        label=f"📥 重新导出诊断书 ({item['student_name']}.md)",
+                        data=item['report_content'],
+                        file_name=f"{item['student_name']}_{item['grade']}_诊断报告.md",
+                        mime="text/markdown",
+                        key=f"dl_{item['id']}"
+                    )
+                with btn_col2:
+                    if st.button(f"🗑️ 删除此档案", key=f"del_{item['id']}"):
+                        db.delete_report(item['id'])
+                        st.toast(f"已成功删除学员【{item['student_name']}】的档案！", icon="🗑️")
+                        st.rerun()
+
+# 6. 页脚说明
+st.markdown("---")
+st.caption("🔒 中高考卷面提分 SaaS Pro v5.0 | 数据安全本地持久化 | 仅供授权机构内部使用")
