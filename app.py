@@ -32,7 +32,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 授权密钥列表
-AUTHORIZED_KEYS = ["exam2025", "vip888", "teacher999"]
+AUTHORIZED_KEYS = ["dzy1988"]
 
 # 初始化 Session State
 if "authenticated" not in st.session_state:
