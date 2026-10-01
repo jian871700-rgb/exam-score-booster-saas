@@ -186,7 +186,7 @@ with tab1:
             )
 
 # ----------------- TAB 2: 微信私域转化专家 -----------------
-with tab3_placeholder := tab2:
+with tab2:
     st.markdown("#### 🎯 微信私域 1对1 沟通、高情商推课与异议化解专家")
     
     col_w1, col_w2 = st.columns(2)
@@ -253,94 +253,4 @@ with tab3_placeholder := tab2:
         
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
         col_dw1, col_dw2 = st.columns(2)
-        with col_dw1:
-            st.download_button(
-                label="📥 下载话术为 Markdown (.md)",
-                data=st.session_state.wechat_result,
-                file_name=f"WeChat_SOP_{timestamp}.md",
-                mime="text/markdown",
-                use_container_width=True
-            )
-        with col_dw2:
-            st.download_button(
-                label="📥 下载话术为纯文本 (.txt)",
-                data=st.session_state.wechat_result,
-                file_name=f"WeChat_SOP_{timestamp}.txt",
-                mime="text/plain",
-                use_container_width=True
-            )
-
-# ----------------- TAB 3: 诊断与报告 -----------------
-with tab3:
-    st.markdown("#### 🎯 生成 1对1 权威卷面诊断书与 980元 课程转化方案")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        student_name = st.text_input("👤 学员称呼", value="张同学 (初三)")
-        teacher_name = st.text_input("👨‍🏫 诊断规划师/老师", value="林老师")
-    with col2:
-        subject_info = st.text_input("📚 科目与当前分数", value="中考英语 92分 / 满分120分")
-        target_score = st.text_input("🎯 目标分数", value="105分以上")
-    with col3:
-        issues = st.text_area("🔍 试卷卷面典型问题描述", value="主观题作文涂改严重、字母倾斜度不一致、大小写不分、答题超出答题卡扫描红线边框")
-
-    if st.button("📑 一键生成学员专属诊断报告与高情商转化方案", use_container_width=True, type="primary"):
-        with st.spinner("🤖 正在深度分析卷面失分风险并制定抢分方案..."):
-            diag_prompt = f"""
-你是一位资深中高考卷面教研专家兼高客单私域转化操盘手。
-请根据以下学员的卷面具体情况，生成一份极具专业度、权威感且能自然促进成交的《1对1中高考卷面深度诊断与提分规划书》。
-
-【学员基本档案】：
-- 学员称呼：{student_name}
-- 诊断规划师：{teacher_name}
-- 科目与现状：{subject_info}
-- 冲刺目标：{target_score}
-- 试卷卷面典型问题：{issues}
-
-【核心商业目的】：
-客观指出痛点，测算隐形丢分，给出科学抢分路径，并自然过渡推荐【980元/6小时中高考卷面极速提分实战营】。
-
-【诊断规划书标准输出结构】：
-一、【试卷卷面定性诊断】：从电子阅卷扫描成像与阅卷老师心理角度，指出三大致命失分硬伤。
-二、【卷面隐形丢分精准测算】：测算出主观题、作文、书写规范方面预计被扣掉的“冤枉分”（给出具体分值区间）。
-三、【6小时卷面通关专属抢分方案】：
-    - 第1-2小时：笔画重构与字距标准化（杜绝扫描模糊）
-    - 第3-4小时：答题卡空间布局与防出框控制（确保扫描完整）
-    - 第5-6小时：高频失分题型实战临摹与阅卷给分点仿真训练
-四、【老师高情商私域成交转化话术】：写一段发给家长的微信语音/文字转化话术，语气真诚、不生硬推销、体现极强专业性与紧迫感，自然引入980元课程。
-"""
-            try:
-                diag_response = client.chat.completions.create(
-                    model=model_choice,
-                    temperature=min(temp_choice, 0.4),
-                    messages=[{"role": "user", "content": diag_prompt}]
-                )
-                st.session_state.diag_result = diag_response.choices[0].message.content
-                st.success("✅ 诊断报告生成成功！")
-            except Exception as e:
-                st.error(f"❌ 诊断生成失败: {str(e)}")
-
-    if st.session_state.diag_result:
-        st.markdown("---")
-        st.subheader("📋 学员诊断报告预览与导出")
-        st.markdown(st.session_state.diag_result)
-        
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
-        col_d1, col_d2 = st.columns(2)
-        with col_d1:
-            st.download_button(
-                label=f"📥 下载【{student_name}】诊断书 (.md)",
-                data=st.session_state.diag_result,
-                file_name=f"Diagnosis_{student_name}_{timestamp}.md",
-                mime="text/markdown",
-                use_container_width=True
-            )
-        with col_d2:
-            st.download_button(
-                label=f"📥 下载【{student_name}】诊断书 (.txt)",
-                data=st.session_state.diag_result,
-                file_name=f"Diagnosis_{student_name}_{timestamp}.txt",
-                mime="text/plain",
-                use_container_width=True
-            )
-
+        with
