@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 注入样式
+# 注入极简现代 UI 样式
 st.markdown("""
 <style>
     .metric-card {
@@ -43,6 +43,8 @@ if "diag_result" not in st.session_state:
     st.session_state.diag_result = ""
 if "wechat_result" not in st.session_state:
     st.session_state.wechat_result = ""
+if "moments_result" not in st.session_state:
+    st.session_state.moments_result = ""
 
 # 登录验证函数
 def check_password():
@@ -83,7 +85,7 @@ with st.sidebar:
         "🧠 核心推理模型",
         ["deepseek-chat", "deepseek-reasoner"],
         index=0,
-        help="deepseek-chat 适合爆款文案快速生成；deepseek-reasoner 适合复杂学情逻辑与私域攻心拆解。"
+        help="deepseek-chat 适合文案与发圈；deepseek-reasoner 适合私域攻心拆解与学术诊断。"
     )
     temp_choice = st.slider(
         "🎛️ 逻辑创造度 (Temperature)",
@@ -98,7 +100,8 @@ with st.sidebar:
     st.caption("1️⃣ **公域引流**：小红书合规干货笔记")
     st.caption("2️⃣ **私域承接**：微信 1对1 攻心与异议化解")
     st.caption("3️⃣ **诊断交付**：试卷卷面失分风险报告书")
-    st.caption("4️⃣ **高客单成交**：980元/6小时极速提分营")
+    st.caption("4️⃣ **私域发圈**：朋友圈高信任背书与成交")
+    st.caption("5️⃣ **高客单成交**：980元/6小时极速提分营")
     st.markdown("---")
     if st.button("🚪 退出登录", use_container_width=True):
         st.session_state.authenticated = False
@@ -106,12 +109,13 @@ with st.sidebar:
 
 # 页面主标题
 st.title("✍️ 中高考卷面提分 · 全链路商业增长中台")
-st.caption("三大中枢：公域爆款引流工厂 | 私域微信高情商成交中枢 | 学员深度诊断规划报告")
+st.caption("四大中枢：公域爆款引流工厂 | 私域微信高情商成交中枢 | 学员深度诊断报告 | 微信朋友圈高信任成交工厂")
 
-tab1, tab2, tab3 = st.tabs([
+tab1, tab2, tab3, tab4 = st.tabs([
     "📝 公域引流文案工厂 (小红书防限流版)", 
     "💬 微信私域转化与异议攻心专家",
-    "📑 学员卷面诊断与高客单转化报告"
+    "📑 学员卷面诊断与高客单转化报告",
+    "📱 微信朋友圈高信任与成交工厂"
 ])
 
 # ----------------- TAB 1: 小红书文案工厂 -----------------
@@ -340,6 +344,90 @@ with tab3:
                 label=f"📥 下载【{student_name}】诊断书 (.txt)",
                 data=st.session_state.diag_result,
                 file_name=f"Diagnosis_{student_name}_{timestamp}.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
+
+# ----------------- TAB 4: 朋友圈高信任文案工厂 -----------------
+with tab4:
+    st.markdown("#### 🎯 微信朋友圈高信任背书与 980元 课程转化发圈工厂")
+    
+    col_m1, col_m2 = st.columns(2)
+    with col_m1:
+        moments_type = st.selectbox(
+            "📌 朋友圈发圈类型/转化目的",
+            [
+                "1. 学员提分案例反差型（Before/After 卷面对比 + 提分喜报）",
+                "2. 阅卷内幕与专业认知输出（中高考答题卡扫描踩坑点揭秘）",
+                "3. 教学日常与名额抢占紧迫感（正在一对一批改 + 本周仅剩X个名额）",
+                "4. 家长真实好评与转介绍晒单（截图反馈 + 感谢家长的信任）"
+            ]
+        )
+        teacher_vibe = st.selectbox(
+            "🎭 老师发圈人设基调",
+            ["专业严谨且有温度的提分导师", "带过多年毕业班的干货型名师", "亲和力拉满、懂孩子心理的辅导老友"]
+        )
+    with col_m2:
+        case_details = st.text_input(
+            "📝 本条发圈核心素材/亮点",
+            value="初三李同学，英语作文原本只有15分（字迹密密麻麻），经过4小时字距调整，一模作文拿到21分！"
+        )
+        call_to_action = st.text_input(
+            "🎯 引导动作 / 钩子",
+            value="本周末【6小时卷面极速抢分营】还剩最后2个1对1指导名额，私信锁定"
+        )
+
+    if st.button("📱 一键生成高转化朋友圈文案（含配图建议与自评）", use_container_width=True, type="primary"):
+        with st.spinner("🤖 正在结合私域朋友圈黄金成交心理学生成文案..."):
+            moments_prompt = f"""
+你是一位顶级的教育私域发圈操盘手兼个人IP转化大师。
+请根据以下素材，为中高考卷面提分项目的老师创作一套【极高信任感、不打硬广、生活化、高互动、促成转化】的微信朋友圈文案。
+
+【发圈背景】：
+- 发圈类型：{moments_type}
+- 老师人设风格：{teacher_vibe}
+- 核心素材亮点：{case_details}
+- 转化目标/引导动作：{call_to_action}（关联980元/6小时中高考卷面提分课程）
+
+【发圈输出要求】：
+1. 【朋友圈正文】：
+   - 严禁机械AI味，语言生活化、自然真诚。
+   - 采用舒适的分段排版，控制字数与行数（防止在微信朋友圈被强制折叠成“全文”）。
+   - 巧妙带出专业价值与学生变化，不生硬推销。
+2. 【配图拍摄与排版建议】：具体建议发单图、三图、四宫格还是九宫格？每张图应该放什么（例如：左边放修改前密密麻麻的答题卡，右边放规范后，中间放家长微信好评截图）。
+3. 【第一条自评话术（关键钩子）】：生成一条发布朋友圈后立刻在评论区自己发布的留言（用于抛出领取资料的钩子、说明名额仅剩多少、或补充行动指令，避免污染正文）。
+"""
+            try:
+                moments_resp = client.chat.completions.create(
+                    model=model_choice,
+                    temperature=temp_choice,
+                    messages=[{"role": "user", "content": moments_prompt}]
+                )
+                st.session_state.moments_result = moments_resp.choices[0].message.content
+                st.success("✅ 朋友圈高转化文案生成成功！")
+            except Exception as e:
+                st.error(f"❌ 生成失败: {str(e)}")
+
+    if st.session_state.moments_result:
+        st.markdown("---")
+        st.subheader("📋 朋友圈发圈方案预览与复制")
+        st.markdown(st.session_state.moments_result)
+        
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+        col_dm1, col_dm2 = st.columns(2)
+        with col_dm1:
+            st.download_button(
+                label="📥 下载朋友圈文案为 Markdown (.md)",
+                data=st.session_state.moments_result,
+                file_name=f"Moments_Copy_{timestamp}.md",
+                mime="text/markdown",
+                use_container_width=True
+            )
+        with col_dm2:
+            st.download_button(
+                label="📥 下载朋友圈文案为纯文本 (.txt)",
+                data=st.session_state.moments_result,
+                file_name=f"Moments_Copy_{timestamp}.txt",
                 mime="text/plain",
                 use_container_width=True
             )
