@@ -4,7 +4,7 @@ import datetime
 
 # 页面基础配置
 st.set_page_config(
-    page_title="中高考卷面提分 · 商业转化工作台",
+    page_title="中高考卷面提分 · 全链路商业增长中台",
     page_icon="✍️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -21,11 +21,12 @@ st.markdown("""
         margin-bottom: 15px;
     }
     .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
+        gap: 8px;
     }
     .stTabs [data-baseweb="tab"] {
         height: 48px;
         font-weight: 600;
+        font-size: 15px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -40,6 +41,8 @@ if "xhs_result" not in st.session_state:
     st.session_state.xhs_result = ""
 if "diag_result" not in st.session_state:
     st.session_state.diag_result = ""
+if "wechat_result" not in st.session_state:
+    st.session_state.wechat_result = ""
 
 # 登录验证函数
 def check_password():
@@ -80,7 +83,7 @@ with st.sidebar:
         "🧠 核心推理模型",
         ["deepseek-chat", "deepseek-reasoner"],
         index=0,
-        help="deepseek-chat 适合爆款文案快速生成；deepseek-reasoner 适合复杂学情逻辑深度推理。"
+        help="deepseek-chat 适合爆款文案快速生成；deepseek-reasoner 适合复杂学情逻辑与私域攻心拆解。"
     )
     temp_choice = st.slider(
         "🎛️ 逻辑创造度 (Temperature)",
@@ -88,25 +91,30 @@ with st.sidebar:
         max_value=1.0,
         value=0.7,
         step=0.05,
-        help="文案创作建议 0.7~0.85，学术诊断建议 0.2~0.4。"
+        help="文案与私域建议 0.6~0.8，学术诊断建议 0.2~0.4。"
     )
     st.markdown("---")
-    st.markdown("### 📌 交付物料备忘")
-    st.caption("• 980元/6小时 中高考卷面抢分课")
-    st.caption("• 2025中考答题卡1:1速成字帖PDF")
-    st.caption("• 1对1 试卷卷面失分风险诊断书")
+    st.markdown("### 📌 转化全链路导航")
+    st.caption("1️⃣ **公域引流**：小红书合规干货笔记")
+    st.caption("2️⃣ **私域承接**：微信 1对1 攻心与异议化解")
+    st.caption("3️⃣ **诊断交付**：试卷卷面失分风险报告书")
+    st.caption("4️⃣ **高客单成交**：980元/6小时极速提分营")
     st.markdown("---")
     if st.button("🚪 退出登录", use_container_width=True):
         st.session_state.authenticated = False
         st.rerun()
 
 # 页面主标题
-st.title("✍️ 中高考卷面提分 · 商业转化增长中台")
-st.caption("全栈赋能：小红书矩阵引流文案自动化 | 私域高客单 1对1 卷面诊断转化")
+st.title("✍️ 中高考卷面提分 · 全链路商业增长中台")
+st.caption("三大中枢：公域爆款引流工厂 | 私域微信高情商成交中枢 | 学员深度诊断规划报告")
 
-tab1, tab2 = st.tabs(["📝 引流文案爆款工厂 (小红书合规版)", "📑 学员卷面诊断与私域转化报告"])
+tab1, tab2, tab3 = st.tabs([
+    "📝 公域引流文案工厂 (小红书防限流版)", 
+    "💬 微信私域转化与异议攻心专家",
+    "📑 学员卷面诊断与高客单转化报告"
+])
 
-# TAB 1: 小红书文案工厂（合规防限流升级）
+# ----------------- TAB 1: 小红书文案工厂 -----------------
 with tab1:
     st.markdown("#### 🎯 批量生成高权重、防限流的小红书爆款笔记")
     
@@ -119,7 +127,7 @@ with tab1:
         core_pain = st.text_input("⚡ 核心戳痛点", value="平时做题都会，一到大考因字迹潦草被扣掉8-15分冤枉分")
 
     if st.button("🔥 立即生成小红书合规爆款文案", use_container_width=True, type="primary"):
-        with st.spinner("🤖 正在结合小红书最新合规算法与爆款心理学创作文案..."):
+        with st.spinner("🤖 正在结合小红书最新合规算法创作文案..."):
             prompt = f"""
 你是一位深谙小红书2025最新推荐算法与违规风控机制的顶级教育运营操盘手。
 请针对以下中高考卷面提分需求，创作一篇【绝对合规、防限流、高互动、去AI感】的小红书爆款图文文案。
@@ -130,18 +138,17 @@ with tab1:
 - 核心痛点：{core_pain}
 - 引流物料：{lead_magnet}
 
-【小红书最新平台风控与防限流硬性禁令（违者必杀）】：
-1. 严禁出现诱导互动词：绝对禁止出现“评论区扣XX发你”、“免费送”、“无偿领取”、“加微信/私信我”、“留邮箱”等任何索要互动的表述！
-2. 合规结尾方案：文末只能使用【自然场景植入】或【启发式提问】，例如：“之前带的学生都是用我自己整理的【{lead_magnet}】纠正的，在标准格子里写两周效果就出来了。大家平时英语作文卷面最容易在哪个细节扣分？”
-3. 严禁极限夸大词：禁止使用“百分之百、必提、保过、神药”等绝对化词汇。
-4. 语言风格：必须第一人称“带了多年中高考班的XX老师”，口吻要真诚、心疼、专业，多用短句、语气词（啊、呢、敲黑板），适当搭配小红书 Emoji，彻底消除 AI 机械感。
+【小红书平台防限流硬性规则】：
+1. 严禁出现诱导互动词：绝对禁止出现“评论区扣XX发你”、“免费送”、“无偿领取”、“加微信/私信我”等任何索要互动的表述！
+2. 合规结尾：文末只能使用【自然场景植入】或【启发式提问】，如：“之前带的学生都是用我自己整理的【{lead_magnet}】纠正的，在标准格子里写两周效果就出来了。大家平时英语作文卷面最容易在哪个细节扣分？”
+3. 语言风格：必须第一人称“带了多年中高考班的XX老师”，真诚、专业、多用短句与小红书表情，杜绝AI机械感。
 
 【文案输出格式】：
 1. 3个高点击率爆款封面标题（带情绪标签与数字对比）
-2. 3秒黄金抓人痛点开场（戳中卷面隐形丢分、阅卷老师心理）
-3. 卷面提分干货正文（分点排版，通俗易懂）
-4. 合规互动结尾（启发讨论/自然植入资料名，绝对无违规词）
-5. 5-8个精准高流量小红书标签（#标签名）
+2. 3秒黄金抓人痛点开场
+3. 卷面提分干货正文（分点排版）
+4. 合规互动结尾（启发讨论/自然植入资料名）
+5. 5-8个精准高流量小红书标签
 """
             try:
                 response = client.chat.completions.create(
@@ -150,7 +157,7 @@ with tab1:
                     messages=[{"role": "user", "content": prompt}]
                 )
                 st.session_state.xhs_result = response.choices[0].message.content
-                st.success("✅ 爆款合规文案生成成功！已自动通过防限流风控检测。")
+                st.success("✅ 爆款合规文案生成成功！")
             except Exception as e:
                 st.error(f"❌ 生成失败: {str(e)}")
 
@@ -178,9 +185,94 @@ with tab1:
                 use_container_width=True
             )
 
-# TAB 2: 诊断与私域转化
-with tab2:
-    st.markdown("#### 🎯 生成 1对1 权威卷面诊断书与 980元 课程转化话术")
+# ----------------- TAB 2: 微信私域转化专家 -----------------
+with tab3_placeholder := tab2:
+    st.markdown("#### 🎯 微信私域 1对1 沟通、高情商推课与异议化解专家")
+    
+    col_w1, col_w2 = st.columns(2)
+    with col_w1:
+        wechat_stage = st.selectbox(
+            "📍 当前微信沟通阶段",
+            [
+                "1. 加微信首接打招呼与交付资料（顺便要试卷）",
+                "2. 收到家长试卷图后的【定性反馈与痛点放大】",
+                "3. 正式推荐【980元/6小时卷面抢分实战课】",
+                "4. 核心异议攻心化解（针对家长各种抗拒与犹豫）",
+                "5. 家长已读不回 / 沉默超过24小时的【无压力二次激活】"
+            ]
+        )
+        objection_type = st.selectbox(
+            "⚡ 针对的家长核心顾虑/抗拒点（若处于阶段4或5）",
+            [
+                "无抗拒 / 正常推进流程",
+                "嫌980元太贵 / 问能不能便宜点",
+                "孩子初三/高三了，时间太紧没空练字",
+                "字迹已经定型了，短短几小时真的能改过来吗？",
+                "我说的不算，我得跟孩子/孩子爸爸商量一下",
+                "孩子自己不重视/不想学，家长干着急",
+                "已读不回 / 问完资料后再无音讯"
+            ]
+        )
+    with col_w2:
+        parent_info = st.text_input("👤 家长与孩子基本情况", value="初三男生家长，孩子英语模拟考90分左右，作文涂改严重")
+        lead_magnet_used = st.text_input("🎁 刚才送出的资料", value="2025中考答题卡1:1速成字帖PDF")
+
+    if st.button("💬 一键生成微信实战话术与心理攻心策略", use_container_width=True, type="primary"):
+        with st.spinner("🤖 正在运用教育私域转化心理学生成切片话术..."):
+            wechat_prompt = f"""
+你是一位拥有近10年私域教育高客单成交经验的顶级金牌导师与沟通心理学专家。
+请根据以下微信沟通场景，为一线老师生成一套【高情商、不卑不亢、专业利他、强信任感】的微信聊天话术。
+
+【沟通背景】：
+- 当前阶段：{wechat_stage}
+- 家长抗拒/顾虑点：{objection_type}
+- 家长/孩子画像：{parent_info}
+- 钩子物料：{lead_magnet_used}
+- 核心转化目标产品：980元/6小时中高考卷面极速提分课（主打：针对中高考答题卡扫描机制，6小时攻克排版、字距与阅卷老师得分盲区，避免丢掉8-15分冤枉分）。
+
+【话术输出要求】：
+1. 【微信单条发送切片（核心重点）】：直接生成 3-5 条适合在微信里一条一条发出去的短文本（每条控制在2-3句话内，带真实教师口吻，语气亲切真诚且专业）。
+2. 【攻心逻辑拆解】：简要说明为什么这几句话能击中家长心理、化解防备。
+3. 【下一步动作引导】：提示老师发完这段话后，下一步该引导家长做什么（如：引导发作文照片、支付定金、锁定名额等）。
+"""
+            try:
+                wechat_resp = client.chat.completions.create(
+                    model=model_choice,
+                    temperature=temp_choice,
+                    messages=[{"role": "user", "content": wechat_prompt}]
+                )
+                st.session_state.wechat_result = wechat_resp.choices[0].message.content
+                st.success("✅ 微信私域转化话术生成成功！")
+            except Exception as e:
+                st.error(f"❌ 生成失败: {str(e)}")
+
+    if st.session_state.wechat_result:
+        st.markdown("---")
+        st.subheader("📋 微信实战聊天话术预览与复制")
+        st.markdown(st.session_state.wechat_result)
+        
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+        col_dw1, col_dw2 = st.columns(2)
+        with col_dw1:
+            st.download_button(
+                label="📥 下载话术为 Markdown (.md)",
+                data=st.session_state.wechat_result,
+                file_name=f"WeChat_SOP_{timestamp}.md",
+                mime="text/markdown",
+                use_container_width=True
+            )
+        with col_dw2:
+            st.download_button(
+                label="📥 下载话术为纯文本 (.txt)",
+                data=st.session_state.wechat_result,
+                file_name=f"WeChat_SOP_{timestamp}.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
+
+# ----------------- TAB 3: 诊断与报告 -----------------
+with tab3:
+    st.markdown("#### 🎯 生成 1对1 权威卷面诊断书与 980元 课程转化方案")
     
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -192,7 +284,7 @@ with tab2:
     with col3:
         issues = st.text_area("🔍 试卷卷面典型问题描述", value="主观题作文涂改严重、字母倾斜度不一致、大小写不分、答题超出答题卡扫描红线边框")
 
-    if st.button("📑 一键生成学员专属诊断报告与高情商转化话术", use_container_width=True, type="primary"):
+    if st.button("📑 一键生成学员专属诊断报告与高情商转化方案", use_container_width=True, type="primary"):
         with st.spinner("🤖 正在深度分析卷面失分风险并制定抢分方案..."):
             diag_prompt = f"""
 你是一位资深中高考卷面教研专家兼高客单私域转化操盘手。
@@ -251,3 +343,4 @@ with tab2:
                 mime="text/plain",
                 use_container_width=True
             )
+
