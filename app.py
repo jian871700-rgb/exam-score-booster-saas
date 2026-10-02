@@ -337,9 +337,11 @@ with tab5:
             with st.expander(f"👤 学员：{s_name} | {s_grade} | 目标分差：{s_gap} ({s_time})"):
                 st.markdown(s_report)
 # 在展示报告的代码下面加上：
-st.download_button(
-    label="📥 一键下载本份诊断报告 (TXT格式)",
-    data=report_res,   # 这里的 report_res 换成你代码里存报告的变量名
-    file_name="卷面诊断报告.txt",
-    mime="text/plain"
-)
+# 确保只在有报告内容时才显示下载按钮
+if 'diagnostic_report' in locals() and diagnostic_report:
+    st.download_button(
+        label="📥 一键下载完整诊断报告 (Markdown格式)",
+        data=diagnostic_report,
+        file_name="中高考AI卷面深度诊断报告.md",
+        mime="text/markdown"
+    )
